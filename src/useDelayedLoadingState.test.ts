@@ -104,19 +104,21 @@ describe("useDelayedLoadingState hook", () => {
       expect(result.current).toBe(false);
     });
   });
+
+  // test case to verify correct state when changing session
 });
 
 const notPendingNotCompletedAsyncOperationArgs: Pick<
   UseDelayedLoadingResultProps,
-  "asyncOperationIsComplete" | "asyncOperationIsPending"
-> = { asyncOperationIsComplete: false, asyncOperationIsPending: false };
+  "asyncOperationIsCompleted" | "asyncOperationIsPending"
+> = { asyncOperationIsCompleted: false, asyncOperationIsPending: false };
 
 const pendingNotCompletedAsyncOperationArgs: Pick<
   UseDelayedLoadingResultProps,
-  "asyncOperationIsComplete" | "asyncOperationIsPending"
-> = { asyncOperationIsComplete: false, asyncOperationIsPending: true };
+  "asyncOperationIsCompleted" | "asyncOperationIsPending"
+> = { asyncOperationIsCompleted: false, asyncOperationIsPending: true };
 
 const notPendingCompletedAsyncOperationArgs: Pick<
   UseDelayedLoadingResultProps,
-  "asyncOperationIsComplete" | "asyncOperationIsPending"
-> = { asyncOperationIsComplete: true, asyncOperationIsPending: false };
+  "asyncOperationIsCompleted" | "asyncOperationIsPending"
+> = { asyncOperationIsCompleted: true, asyncOperationIsPending: false };

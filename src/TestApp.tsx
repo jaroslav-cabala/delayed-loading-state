@@ -4,14 +4,14 @@ import "./App.css";
 import { useQuery } from "@tanstack/react-query";
 
 function TestApp() {
-  return <TestComponent />;
+  return <TestComponent_tanstack_query />;
 }
 
 export default TestApp;
 
 const asyncOperation = (val: number): Promise<string[]> => {
-  // const ms = 4105;
-  const ms = Math.random() * 2000;
+  const ms = 4105;
+  // const ms = Math.random() * 2000;
   return new Promise((res) =>
     setTimeout(() => {
       res(Array(10).fill(val));
@@ -69,7 +69,7 @@ function TestComponent() {
   const { data, loading, completed, error } = useGetAsyncValues(nextValue);
   const delayedLoading = useDelayedLoading({
     asyncOperationIsPending: loading,
-    asyncOperationIsComplete: completed,
+    asyncOperationIsCompleted: completed,
     session: nextValue,
     delay: 1000,
   });
@@ -87,14 +87,15 @@ function TestComponent() {
 // using tanstack query to asynchronously fetch values
 function TestComponent_tanstack_query() {
   const [nextValue, setNextValue] = useState(1);
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, isPreviousData } = useQuery({
     queryKey: ["test", nextValue],
     queryFn: () => asyncOperation(nextValue),
+    keepPreviousData: true,
   });
   console.log(`-------------------------- data = ${data}`);
   const delayedLoading = useDelayedLoading({
     asyncOperationIsPending: isLoading,
-    asyncOperationIsComplete: !!data,
+    asyncOperationIsCompleted: !!data && !isPreviousData,
     session: nextValue,
     delay: 500,
   });

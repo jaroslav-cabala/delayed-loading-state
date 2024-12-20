@@ -3,15 +3,17 @@ import { useEffect, useRef, useState } from "react";
 export type UseDelayedLoadingResultProps = {
   session: unknown;
   asyncOperationIsPending: boolean;
-  asyncOperationIsComplete: boolean;
+  asyncOperationIsCompleted: boolean;
   delay?: number;
+  loadingStateMinimumTime?: number;
 };
 
 export const useDelayedLoading = ({
   session,
   asyncOperationIsPending,
-  asyncOperationIsComplete,
+  asyncOperationIsCompleted,
   delay = 1000,
+  loadingStateMinimumTime = 1000,
 }: UseDelayedLoadingResultProps): boolean => {
   const [delayedLoading, setDelayedLoading] = useState(false);
   const [delayedLoadingDone, setDelayedLoadingDone] = useState(false);
@@ -21,15 +23,14 @@ export const useDelayedLoading = ({
   console.log("delayedLoading = ", delayedLoading);
   console.log("delayedLoadingDone = ", delayedLoadingDone);
   console.log("asyncOperationIsPending prop = ", asyncOperationIsPending);
-  console.log("asyncOperationIsCompleted prop = ", asyncOperationIsComplete);
+  console.log("asyncOperationIsCompleted prop = ", asyncOperationIsCompleted);
 
   const outerTimeoutId = useRef<number | undefined>();
 
   useEffect(() => {
-    console.log("useDelayedLoading useEffect");
+    console.log("USE_DELAYED_LOADING USE_EFFECT");
     let innerTimeoutId: number | undefined;
 
-    setDelayedLoading(false);
     setDelayedLoadingDone(false);
 
     outerTimeoutId.current = window.setTimeout(() => {
@@ -38,40 +39,47 @@ export const useDelayedLoading = ({
       innerTimeoutId = window.setTimeout(() => {
         console.log("inner timeout elapsed");
         setDelayedLoadingDone(true);
-      }, 1000);
+        setDelayedLoading(false);
+      }, loadingStateMinimumTime);
     }, delay);
 
     return () => {
-      console.log(`clear timeouts, outerTimeout = ${outerTimeoutId}, innerTimeout = ${innerTimeoutId}`);
+      console.log(
+        `clear timeouts, outerTimeout = ${outerTimeoutId.current}, innerTimeout = ${innerTimeoutId}`
+      );
       clearTimeout(outerTimeoutId.current);
       clearTimeout(innerTimeoutId);
     };
-  }, [delay, session]);
+  }, [delay, session, loadingStateMinimumTime]);
 
-  //return loading false if time to show loading status has not elapsed yet
   if (!delayedLoading) {
-    console.log("return delayedLoading = false");
-
-    // if async operation is complete clear delayed loading timeout
-    if (asyncOperationIsComplete) {
-      console.log("clear timeout because async operation is done");
-      clearTimeout(outerTimeoutId.current);
+    if (!delayedLoadingDone) {
+      if (asyncOperationIsCompleted && !asyncOperationIsPending) {
+        // clear delayed loading timeout if async operation is complete
+        // before delay time to be in the loading state has elapsed
+        console.log("clear timeout because async operation is done");
+        clearTimeout(outerTimeoutId.current);
+      }
+      console.log("delay time to be in the loading state has not elapsed yet, return FALSE");
+      return false;
+    } else if (asyncOperationIsCompleted && !asyncOperationIsPending) {
+      console.log(
+        `async operation is completed and minimum time to be in the loading state has already elapsed, return FALSE`
+      );
+      setDelayedLoadingDone(false);
+      return false;
     }
-    return false;
-  }
-  // time to wait to show loading status has elapsed
-  else {
-    // return loading true for a specific time(500ms by default) or until the async operation is pending
-    if (!delayedLoadingDone || asyncOperationIsPending) {
-      console.log(`return delayedLoading = true`);
-      return true;
-    }
-
-    // return loading false because async operation is completed or minimum time to show loading status
-    // has elapsed
+    // return TRUE if async operation is still not completed
+    // (minimum time to be in the loading state has already elapsed)
     console.log(
-      "async operation is completed or time to show loading status has elapsed, return delayedLoading = false"
+      `async operation is still not complete, but minimum time to be in the loading state has already elapsed return TRUE`
     );
-    return false;
+    return true;
   }
+  // return TRUE because an async operation was not complete in time specified by the `delay` prop(default is 300ms)
+  // and therefore loading state is TRUE for `loadingStateMinimumTime` time
+  console.log(
+    `an async operation was not complete in time and loading state will be true for a minimum time, return TRUE`
+  );
+  return true;
 };
