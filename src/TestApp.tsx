@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDelayedLoading } from "./useDelayedLoadingState";
 import "./App.css";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 function TestApp() {
   return <TestComponent_tanstack_query />;
@@ -10,13 +10,17 @@ function TestApp() {
 export default TestApp;
 
 const asyncOperation = (val: number): Promise<string[]> => {
-  const ms = 4105;
-  // const ms = Math.random() * 2000;
-  return new Promise((res) =>
+  // const ms = 4105;
+  const ms = Math.random() * 2000;
+  return new Promise((res) => {
+    const t0 = performance.now();
+
     setTimeout(() => {
+      const t1 = performance.now();
+      console.log(`async operation took ${t1 - t0} milliseconds. Got new async value = ${val}`);
       res(Array(10).fill(val));
-    }, ms)
-  );
+    }, ms);
+  });
 };
 
 async function* asyncValuesGenerator(): AsyncGenerator<string[]> {
@@ -68,7 +72,6 @@ function TestComponent() {
   const [nextValue, setNextValue] = useState(1);
   const { data, loading, completed, error } = useGetAsyncValues(nextValue);
   const delayedLoading = useDelayedLoading({
-    asyncOperationIsPending: loading,
     asyncOperationIsCompleted: completed,
     session: nextValue,
     delay: 1000,
@@ -87,15 +90,17 @@ function TestComponent() {
 // using tanstack query to asynchronously fetch values
 function TestComponent_tanstack_query() {
   const [nextValue, setNextValue] = useState(1);
-  const { data, isLoading, isError, isPreviousData } = useQuery({
+  const { data, isPending, isFetching, isPlaceholderData } = useQuery({
     queryKey: ["test", nextValue],
     queryFn: () => asyncOperation(nextValue),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
   });
   console.log(`-------------------------- data = ${data}`);
+  console.log(`-------------------------- isPending = ${isPending}`);
+  console.log(`-------------------------- isFetching = ${isFetching}`);
   const delayedLoading = useDelayedLoading({
-    asyncOperationIsPending: isLoading,
-    asyncOperationIsCompleted: !!data && !isPreviousData,
+    asyncOperationIsCompleted: !!data && !isPlaceholderData,
     session: nextValue,
     delay: 500,
   });
@@ -103,7 +108,7 @@ function TestComponent_tanstack_query() {
   return (
     <div className="h-32 w-32">
       Content: {delayedLoading ? <Loading /> : data}
-      <button disabled={isLoading || delayedLoading} onClick={() => setNextValue((v) => v + 1)}>
+      <button disabled={isPending || isFetching || delayedLoading} onClick={() => setNextValue((v) => v + 1)}>
         Next value
       </button>
     </div>

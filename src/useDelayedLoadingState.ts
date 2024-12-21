@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 
 export type UseDelayedLoadingResultProps = {
   session: unknown;
-  asyncOperationIsPending: boolean;
   asyncOperationIsCompleted: boolean;
   delay?: number;
   loadingStateMinimumTime?: number;
@@ -10,7 +9,6 @@ export type UseDelayedLoadingResultProps = {
 
 export const useDelayedLoading = ({
   session,
-  asyncOperationIsPending,
   asyncOperationIsCompleted,
   delay = 1000,
   loadingStateMinimumTime = 1000,
@@ -22,10 +20,9 @@ export const useDelayedLoading = ({
   console.log("session = ", session);
   console.log("delayedLoading = ", delayedLoading);
   console.log("delayedLoadingDone = ", delayedLoadingDone);
-  console.log("asyncOperationIsPending prop = ", asyncOperationIsPending);
   console.log("asyncOperationIsCompleted prop = ", asyncOperationIsCompleted);
 
-  const outerTimeoutId = useRef<number | undefined>();
+  const outerTimeoutId = useRef<number>(undefined);
 
   useEffect(() => {
     console.log("USE_DELAYED_LOADING USE_EFFECT");
@@ -54,7 +51,7 @@ export const useDelayedLoading = ({
 
   if (!delayedLoading) {
     if (!delayedLoadingDone) {
-      if (asyncOperationIsCompleted && !asyncOperationIsPending) {
+      if (asyncOperationIsCompleted) {
         // clear delayed loading timeout if async operation is complete
         // before delay time to be in the loading state has elapsed
         console.log("clear timeout because async operation is done");
@@ -62,7 +59,8 @@ export const useDelayedLoading = ({
       }
       console.log("delay time to be in the loading state has not elapsed yet, return FALSE");
       return false;
-    } else if (asyncOperationIsCompleted && !asyncOperationIsPending) {
+    }
+    if (asyncOperationIsCompleted) {
       console.log(
         `async operation is completed and minimum time to be in the loading state has already elapsed, return FALSE`
       );
