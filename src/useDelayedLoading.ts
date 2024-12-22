@@ -10,74 +10,50 @@ export type UseDelayedLoadingResultProps = {
 export const useDelayedLoading = ({
   session,
   asyncOperationIsCompleted,
-  delay = 1000,
-  loadingStateMinimumTime = 1000,
+  delay = 300,
+  loadingStateMinimumTime = 300,
 }: UseDelayedLoadingResultProps): boolean => {
   const [delayedLoading, setDelayedLoading] = useState(false);
   const [delayedLoadingDone, setDelayedLoadingDone] = useState(false);
 
-  console.log("-----------------------------------------------");
-  console.log("session = ", session);
-  console.log("delayedLoading = ", delayedLoading);
-  console.log("delayedLoadingDone = ", delayedLoadingDone);
-  console.log("asyncOperationIsCompleted prop = ", asyncOperationIsCompleted);
+  const outerTimeoutIdRef = useRef<number>(undefined);
+  const sessionRef = useRef(session);
 
-  const outerTimeoutId = useRef<number>(undefined);
-
+  // initiate timeout to delay loading state
   useEffect(() => {
-    console.log("USE_DELAYED_LOADING USE_EFFECT");
     let innerTimeoutId: number | undefined;
 
-    setDelayedLoadingDone(false);
+    // reset state when session changes
+    if (sessionRef.current !== session) {
+      sessionRef.current = session;
+      setDelayedLoading(false);
+      setDelayedLoadingDone(false);
+    }
 
-    outerTimeoutId.current = window.setTimeout(() => {
-      console.log("outer timeout elapsed, displaying loading state for 500ms");
+    outerTimeoutIdRef.current = window.setTimeout(() => {
       setDelayedLoading(true);
       innerTimeoutId = window.setTimeout(() => {
-        console.log("inner timeout elapsed");
         setDelayedLoadingDone(true);
         setDelayedLoading(false);
       }, loadingStateMinimumTime);
     }, delay);
 
     return () => {
-      console.log(
-        `clear timeouts, outerTimeout = ${outerTimeoutId.current}, innerTimeout = ${innerTimeoutId}`
-      );
-      clearTimeout(outerTimeoutId.current);
+      clearTimeout(outerTimeoutIdRef.current);
       clearTimeout(innerTimeoutId);
     };
   }, [delay, session, loadingStateMinimumTime]);
 
-  if (!delayedLoading) {
-    if (!delayedLoadingDone) {
-      if (asyncOperationIsCompleted) {
-        // clear delayed loading timeout if async operation is complete
-        // before delay time to be in the loading state has elapsed
-        console.log("clear timeout because async operation is done");
-        clearTimeout(outerTimeoutId.current);
-      }
-      console.log("delay time to be in the loading state has not elapsed yet, return FALSE");
-      return false;
-    }
-    if (asyncOperationIsCompleted) {
-      console.log(
-        `async operation is completed and minimum time to be in the loading state has already elapsed, return FALSE`
-      );
+  // when async operation is completed, change state to signalize that loading is done
+  useEffect(() => {
+    if (asyncOperationIsCompleted && delayedLoadingDone) {
       setDelayedLoadingDone(false);
-      return false;
     }
-    // return TRUE if async operation is still not completed
-    // (minimum time to be in the loading state has already elapsed)
-    console.log(
-      `async operation is still not complete, but minimum time to be in the loading state has already elapsed return TRUE`
-    );
-    return true;
+  }, [asyncOperationIsCompleted, delayedLoadingDone]);
+
+  if (!delayedLoading && !delayedLoadingDone && asyncOperationIsCompleted) {
+    clearTimeout(outerTimeoutIdRef.current);
   }
-  // return TRUE because an async operation was not complete in time specified by the `delay` prop(default is 300ms)
-  // and therefore loading state is TRUE for `loadingStateMinimumTime` time
-  console.log(
-    `an async operation was not complete in time and loading state will be true for a minimum time, return TRUE`
-  );
-  return true;
+
+  return sessionRef.current === session && (delayedLoading || delayedLoadingDone);
 };

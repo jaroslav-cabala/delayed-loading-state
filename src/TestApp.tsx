@@ -71,6 +71,9 @@ const useGetAsyncValues = (
 function TestComponent() {
   const [nextValue, setNextValue] = useState(1);
   const { data, loading, completed, error } = useGetAsyncValues(nextValue);
+  console.log(`-------------------------- data = ${data}`);
+  console.log(`-------------------------- loading = ${loading}`);
+  console.log(`-------------------------- completed = ${completed}`);
   const delayedLoading = useDelayedLoading({
     asyncOperationIsCompleted: completed,
     session: nextValue,
@@ -102,7 +105,7 @@ function TestComponent_tanstack_query() {
   const delayedLoading = useDelayedLoading({
     asyncOperationIsCompleted: !!data && !isPlaceholderData,
     session: nextValue,
-    delay: 500,
+    delay: 1000,
   });
 
   return (
