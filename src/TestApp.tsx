@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useDelayedLoading } from "./useDelayedLoadingState";
+import { useDelayedLoading } from "./useDelayedLoading";
 import "./App.css";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
@@ -10,7 +10,7 @@ function TestApp() {
 export default TestApp;
 
 const asyncOperation = (val: number): Promise<string[]> => {
-  // const ms = 4105;
+  // const ms = 505;
   const ms = Math.random() * 2000;
   return new Promise((res) => {
     const t0 = performance.now();
